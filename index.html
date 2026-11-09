@@ -1,77 +1,52 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的云端实时聊天室</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; height: 100vh; }
-        header { background-color: #24292f; color: white; padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; }
-        #chat-container { flex: 1; display: flex; flex-direction: column; width: 100%; max-width: 600px; margin: 0 auto; background: white; overflow: hidden; }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; list-style-type: none; display: flex; flex-direction: column; gap: 10px; }
-        #messages li { max-width: 80%; padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; line-height: 1.4; word-break: break-word; }
-        .msg-receive { background-color: #e9ecef; align-self: flex-start; border-bottom-left-radius: 4px; color: #333; }
-        .msg-send { background-color: #0969da; align-self: flex-end; border-bottom-right-radius: 4px; color: white; }
-        .system-msg { background-color: transparent !important; color: #8c959f; font-size: 0.8rem !important; align-self: center !important; text-align: center; }
-        #form { display: flex; padding: 15px; background: #fff; border-top: 1px solid #d0d7de; gap: 10px; }
-        #input { flex: 1; padding: 12px 16px; border: 1px solid #d0d7de; border-radius: 6px; font-size: 1rem; outline: none; }
-        button { background-color: #2c974b; color: white; border: none; padding: 0 20px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>猜数字</title>
+<style>
+body{font-family:sans-serif;max-width:400px;margin:40px auto;padding:0 20px;text-align:center}
+input,button{font-size:20px;padding:10px;margin:5px}
+#msg{font-size:20px;min-height:30px}
+</style>
 </head>
 <body>
-    <header>我的云端实时聊天室</header>
-    <div id="chat-container">
-        <ul id="messages">
-            <li class="system-msg">正在连接云端聊天服务器...</li>
-        </ul>
-        <form id="form" action="">
-            <input id="input" autocomplete="off" placeholder="输入聊天内容..." required />
-            <button type="submit">发送</button>
-        </form>
-    </div>
+<h1>猜数字</h1>
+<p>我想了一个 1 到 100 的数,你有 7 次机会!</p>
+<input id="guess" type="number" inputmode="numeric">
+<button onclick="play()">猜</button>
+<p id="msg"></p>
+<button id="again" onclick="start()" style="display:none">再玩一局</button>
+<script>
+let answer, count, max = 7;
 
-    <script src="https://socket.io"></script>
-    <script>
-        const socket = io('https://onrender.com', { transports: ['websocket'] });
-        const userId = '用户_' + Math.floor(Math.random() * 9000 + 1000);
+function start() {
+  answer = Math.floor(Math.random() * 100) + 1;
+  count = 0;
+  msg.textContent = "";
+  guess.value = "";
+  guess.disabled = false;
+  again.style.display = "none";
+}
 
-        const form = document.getElementById('form');
-        const input = document.getElementById('input');
-        const messages = document.getElementById('messages');
+function play() {
+  const g = parseInt(guess.value);
+  if (isNaN(g)) { msg.textContent = "请输入数字"; return; }
+  count++;
+  const left = max - count;
+  if (g === answer) end("猜对了!你用了 " + count + " 次");
+  else if (left === 0) end("没猜中,答案是 " + answer);
+  else msg.textContent = (g < answer ? "小了" : "大了") + ",还剩 " + left + " 次";
+  guess.value = "";
+}
 
-        socket.on('connect', () => {
-            document.querySelector('.system-msg').textContent = '🎉 成功连接到云端聊天通道！你是：' + userId;
-        });
+function end(text) {
+  msg.textContent = text;
+  guess.disabled = true;
+  again.style.display = "inline-block";
+}
 
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (input.value.trim()) {
-                const messageData = { sender: userId, text: input.value.trim() };
-                socket.emit('message', messageData);
-                input.value = '';
-            }
-        });
-
-        socket.on('message', (data) => {
-            const item = document.createElement('li');
-            if (data.sender === userId) {
-                item.className = 'msg-send';
-                item.textContent = data.text;
-            } else {
-                item.className = 'msg-receive';
-                item.textContent = data.sender + ': ' + data.text;
-            }
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
-        });
-        
-        socket.on('disconnect', () => {
-            const item = document.createElement('li');
-            item.className = 'system-msg';
-            item.textContent = '与服务器连接断开，正在尝试重连...';
-            messages.appendChild(item);
-        });
-    </script>
+start();
+</script>
 </body>
 </html>
